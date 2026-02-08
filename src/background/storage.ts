@@ -3,6 +3,7 @@
  * Provides a unified interface for chrome.storage.local and chrome.storage.session.
  */
 import { browser } from "@shared/browser";
+import { defaultSettings } from "@shared/types";
 import type { Code, CustomDomainMapping, ExtensionSettings, KeyAttributes } from "@shared/types";
 
 // Storage keys
@@ -213,9 +214,9 @@ export const settingsStorage = {
         return {
             showAutofillIcon,
             autoFillSingleMatch,
-            syncInterval: stored?.syncInterval ?? 5,
-            theme: stored?.theme ?? "system",
-            lockOnBrowserClose: stored?.lockOnBrowserClose ?? false,
+            syncInterval: stored?.syncInterval ?? defaultSettings.syncInterval,
+            theme: stored?.theme ?? defaultSettings.theme,
+            lockOnBrowserClose: stored?.lockOnBrowserClose ?? defaultSettings.lockOnBrowserClose,
         };
     },
 
