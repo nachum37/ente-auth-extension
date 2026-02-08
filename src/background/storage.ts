@@ -217,6 +217,7 @@ export const settingsStorage = {
             syncInterval: stored?.syncInterval ?? defaultSettings.syncInterval,
             theme: stored?.theme ?? defaultSettings.theme,
             lockOnBrowserClose: stored?.lockOnBrowserClose ?? defaultSettings.lockOnBrowserClose,
+            sortOrder: stored?.sortOrder ?? defaultSettings.sortOrder,
         };
     },
 
