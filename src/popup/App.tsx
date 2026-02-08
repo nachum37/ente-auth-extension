@@ -6,7 +6,7 @@ import { browser, sendMessage, openOptionsPage } from "@shared/browser";
 import { searchCodes } from "@shared/domain-matcher";
 import { generateOTPs } from "@shared/otp";
 import { useTheme } from "@shared/useTheme";
-import type { AuthState, Code, CodeFormData, ParsedQRCode } from "@shared/types";
+import type { AuthState, Code, CodeFormData, ParsedQRCode, SortOrder } from "@shared/types";
 import { CodeCard } from "./CodeCard";
 import { CodeForm } from "./CodeForm";
 
@@ -58,7 +58,7 @@ export const App: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(false);
     const [showSortMenu, setShowSortMenu] = useState(false);
-    const [sortOrder, setSortOrder] = useState<"issuer" | "account" | "recent">("issuer");
+    const [sortOrder, setSortOrder] = useState<SortOrder>("issuer");
     const [timeOffset, setTimeOffset] = useState(0);
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -110,6 +110,19 @@ export const App: React.FC = () => {
     // First tries to load cached codes for instant display, then verifies auth state
     useEffect(() => {
         const initializePopup = async (): Promise<void> => {
+            // Load settings first
+            try {
+                const settingsResponse = await sendMessage<{
+                    success: boolean;
+                    data?: { sortOrder?: SortOrder };
+                }>({ type: "GET_SETTINGS" });
+                if (settingsResponse.success && settingsResponse.data?.sortOrder) {
+                    setSortOrder(settingsResponse.data.sortOrder);
+                }
+            } catch (e) {
+                console.error("Failed to load settings:", e);
+            }
+
             // Step 1: Try to load cached codes immediately (no service worker needed)
             const cached = await getCachedCodesFromStorage();
             if (cached && cached.codes.length > 0) {
@@ -269,6 +282,20 @@ export const App: React.FC = () => {
         setFilteredCodes(result);
     }, [searchQuery, codes, sortOrder, selectedTag]);
 
+    // Handle sort change
+    const handleSortChange = async (newOrder: SortOrder) => {
+        setSortOrder(newOrder);
+        setShowSortMenu(false);
+        try {
+            await sendMessage({
+                type: "SET_SETTINGS",
+                settings: { sortOrder: newOrder }
+            });
+        } catch (e) {
+            console.error("Failed to save sort order:", e);
+        }
+    };
+    
     // Handle unlock
     const handleUnlock = async () => {
         if (!password.trim()) return;
@@ -838,21 +865,21 @@ export const App: React.FC = () => {
                             <div className="sort-menu">
                                 <div
                                     className={`sort-option ${sortOrder === "issuer" ? "active" : ""}`}
-                                    onClick={() => { setSortOrder("issuer"); setShowSortMenu(false); }}
+                                    onClick={() => handleSortChange("issuer")}
                                 >
                                     Issuer
                                     {sortOrder === "issuer" && <CheckIcon />}
                                 </div>
                                 <div
                                     className={`sort-option ${sortOrder === "account" ? "active" : ""}`}
-                                    onClick={() => { setSortOrder("account"); setShowSortMenu(false); }}
+                                    onClick={() => handleSortChange("account")}
                                 >
                                     Account
                                     {sortOrder === "account" && <CheckIcon />}
                                 </div>
                                 <div
                                     className={`sort-option ${sortOrder === "recent" ? "active" : ""}`}
-                                    onClick={() => { setSortOrder("recent"); setShowSortMenu(false); }}
+                                     onClick={() => handleSortChange("recent")}
                                 >
                                     Recently used
                                     {sortOrder === "recent" && <CheckIcon />}
