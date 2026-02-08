@@ -56,6 +56,11 @@ export interface CodeDisplay {
 export type ThemeMode = "light" | "dark" | "system";
 
 /**
+ * Sort order for codes.
+ */
+export type SortOrder = "issuer" | "account" | "recent";
+
+/**
  * Auth codes and time offset from sync.
  */
 export interface AuthCodesAndTimeOffset {
@@ -78,6 +83,8 @@ export interface ExtensionSettings {
     theme: ThemeMode;
     /** Require password when browser restarts. Default: false */
     lockOnBrowserClose: boolean;
+    /** Sort order for codes. Default: "issuer" */
+    sortOrder: SortOrder;
 }
 
 /**
@@ -89,6 +96,7 @@ export const defaultSettings: ExtensionSettings = {
     syncInterval: 5,
     theme: "system",
     lockOnBrowserClose: false,
+    sortOrder: "issuer",
 };
 
 /**
