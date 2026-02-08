@@ -17,8 +17,14 @@ import { CodeForm } from "./CodeForm";
 const getCachedCodesFromStorage = async (): Promise<{
     codes: Code[];
     timeOffset: number;
+    sortOrder: SortOrder;
 } | null> => {
     try {
+         // Read sortOrder from settings
+        const settingsResult = await browser.storage.local.get(["settings"]);
+        const settings = settingsResult.settings as { sortOrder?: SortOrder } | undefined;
+        const sortOrder: SortOrder = settings?.sortOrder || "issuer";
+
         // Try session storage first (Chrome MV3)
         if (browser.storage.session) {
             const result = await browser.storage.session.get(["codesCache", "timeOffset"]);
@@ -27,6 +33,7 @@ const getCachedCodesFromStorage = async (): Promise<{
                 return {
                     codes: result.codesCache as Code[],
                     timeOffset: offset,
+                    sortOrder,
                 };
             }
         } else {
@@ -37,6 +44,7 @@ const getCachedCodesFromStorage = async (): Promise<{
                 return {
                     codes: result.session_codesCache as Code[],
                     timeOffset: offset,
+                    sortOrder,
                 };
             }
         }
@@ -110,24 +118,12 @@ export const App: React.FC = () => {
     // First tries to load cached codes for instant display, then verifies auth state
     useEffect(() => {
         const initializePopup = async (): Promise<void> => {
-            // Load settings first
-            try {
-                const settingsResponse = await sendMessage<{
-                    success: boolean;
-                    data?: { sortOrder?: SortOrder };
-                }>({ type: "GET_SETTINGS" });
-                if (settingsResponse.success && settingsResponse.data?.sortOrder) {
-                    setSortOrder(settingsResponse.data.sortOrder);
-                }
-            } catch (e) {
-                console.error("Failed to load settings:", e);
-            }
-
             // Step 1: Try to load cached codes immediately (no service worker needed)
             const cached = await getCachedCodesFromStorage();
             if (cached && cached.codes.length > 0) {
                 // Show cached codes instantly while we verify auth in background
                 setCodes(cached.codes);
+                setSortOrder(cached.sortOrder);
                 setFilteredCodes(cached.codes);
                 setTimeOffset(cached.timeOffset);
 
